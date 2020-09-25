@@ -285,7 +285,8 @@ function createBlock(
 }
 
 const splitRE = /\r?\n/g
-const emptyRE = /^(?:\/\/)?\s*$/
+const emptyRE = /^\s*/
+const emptyCommentRE = /^\s*(?:\/\/.+)?$/
 const replaceRE = /./g
 
 function generateSourceMap(
@@ -301,24 +302,21 @@ function generateSourceMap(
   })
   map.setSourceContent(filename, source)
   generated.split(splitRE).forEach((line, index) => {
-    if (!emptyRE.test(line)) {
+    if (!emptyCommentRE.test(line)) {
       const originalLine = index + 1 + lineOffset
       const generatedLine = index + 1
-      for (let i = 0; i < line.length; i++) {
-        if (!/\s/.test(line[i])) {
-          map.addMapping({
-            source: filename,
-            original: {
-              line: originalLine,
-              column: i
-            },
-            generated: {
-              line: generatedLine,
-              column: i
-            }
-          })
+      const columnStart = line.match(emptyRE)[0].length
+      map.addMapping({
+        source: filename,
+        original: {
+          line: originalLine,
+          column: columnStart
+        },
+        generated: {
+          line: generatedLine,
+          column: columnStart
         }
-      }
+      })
     }
   })
   return JSON.parse(map.toString())
